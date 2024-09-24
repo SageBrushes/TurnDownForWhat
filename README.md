@@ -26,13 +26,13 @@ This Python script monitors Sonos speakers on your network, adjusts their volume
 Clone this repository to your local machine or directly onto your Raspberry Pi:
 
 ```bash
-git clone https://github.com/yourusername/sonos-volume-monitor.git
+git clone https://github.com/sagebrushes/TurnDownForWhat.git
 ```
 
 Navigate to the project directory:
 
 ```bash
-cd sonos-volume-monitor
+cd TurnDownForWhat
 ```
 
 ### Install Dependencies
