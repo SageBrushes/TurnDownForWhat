@@ -1,5 +1,5 @@
 
-# Sonos Volume Monitor with Slack Notifications
+# Turn Down For What - A Simple Sonos Volume Monitor with Slack Notifications
 
 This Python script monitors Sonos speakers on your network, adjusts their volume if it exceeds a specified maximum, and sends notifications to a Slack channel when the volume is adjusted. The script runs continuously and checks the speakers at regular intervals.
 
