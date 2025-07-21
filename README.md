@@ -1,245 +1,146 @@
+# Turn Down For What - Enhanced Sonos Volume Controller
 
-# Turn Down For What - A Simple Sonos Volume Monitor with Slack Notifications
-
-This Python script monitors Sonos speakers on your network, adjusts their volume if it exceeds a specified maximum, and sends notifications to a Slack channel when the volume is adjusted. The script runs continuously and checks the speakers at regular intervals.
+A Python script that discovers Sonos speakers on your network and gradually adjusts their volume to a target level using smooth fade curves and comprehensive logging.
 
 ## Features
 
-- **Volume Monitoring**: Continuously monitors the volume of Sonos speakers.
-- **Automatic Adjustment**: Lowers the volume if it exceeds a defined maximum.
-- **Slack Notifications**: Sends a message to a Slack channel when the volume is adjusted.
-- **Debounce Mechanism**: Prevents spamming by ensuring notifications are sent no more than once every 5 minutes per speaker.
-- **Group Handling**: Processes only coordinator speakers to avoid duplicate notifications in grouped speakers.
-- **Logging**: Logs activities and errors to both the console and a log file.
+- **Speaker Discovery**: Automatically finds all Sonos speakers on your local network
+- **Smart Volume Adjustment**: Uses smooth S-curve fading instead of harsh linear steps
+- **Speaker Status Display**: Shows current playback state (🎵 playing, ⏸️ paused, ⏹️ stopped) and track information
+- **Comprehensive Logging**: Timestamped logs with progress indicators and execution time tracking
+- **Error Handling**: Graceful handling of network issues and keyboard interrupts
+- **Skip Logic**: Automatically skips speakers already at target volume
 
 ## Prerequisites
 
-- **Python 3.6 or higher**: Required for f-string support and compatibility.
-- **Sonos Speakers**: At least one Sonos speaker connected to your network.
-- **Slack Workspace**: Access to a Slack workspace where you can create a Slack app and receive notifications.
-- **Raspberry Pi or Other Device**: A device to run the script continuously (e.g., Raspberry Pi).
+- **Python 3.6 or higher**: Required for f-string support and compatibility
+- **Sonos Speakers**: At least one Sonos speaker connected to your network
+- **Same Network**: Device running the script must be on the same network as Sonos speakers
 
 ## Installation
 
 ### Clone the Repository
 
-Clone this repository to your local machine or directly onto your Raspberry Pi:
-
 ```bash
 git clone https://github.com/sagebrushes/TurnDownForWhat.git
+cd TurnDownForWhat
 ```
 
-Navigate to the project directory:
+### Set Up Virtual Environment (Recommended)
 
 ```bash
-cd TurnDownForWhat
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 ### Install Dependencies
 
-Install the required Python packages using `pip`:
-
 ```bash
-pip install soco slack_sdk python-dotenv
-```
-
-- **soco**: Library for controlling Sonos speakers.
-- **slack_sdk**: Slack SDK for Python to interact with the Slack API.
-- **python-dotenv**: To load environment variables from a `.env` file.
-
-## Configuration
-
-### 1. Set Up Slack App
-
-#### Create a Slack App and Obtain a Bot Token
-
-- **Create a Slack App**:
-  - Go to [Slack API Apps](https://api.slack.com/apps) and click **"Create New App"**.
-  - Choose **"From scratch"**, give your app a name (e.g., `SonosVolumeBot`), and select your workspace.
-
-- **Configure App Permissions**:
-  - Navigate to **"OAuth & Permissions"** in your app settings.
-  - Under **"Scopes"**, add the following **Bot Token Scopes**:
-    - `chat:write`
-  - Click **"Install App to Workspace"** and authorize the app.
-  - Copy the **Bot User OAuth Token** (starts with `xoxb-`).
-
-- **Invite the Bot to Your Slack Channel**:
-  - In Slack, invite your bot to the channel where you want to receive notifications using `/invite @SonosVolumeBot`.
-
-#### Get Your Slack Channel ID
-
-- Open Slack and navigate to the channel.
-- Click on the channel name to view details.
-- The URL will have the channel ID in the format `C01234567`.
-- Alternatively, right-click on the channel name and select **"Copy Link"**.
-
-### 2. Configure Environment Variables
-
-Create a `.env` file in the project directory to securely store your Slack credentials:
-
-```bash
-SLACK_BOT_TOKEN=xoxb-your-slack-bot-token
-SLACK_CHANNEL_ID=your-slack-channel-id
-```
-
-- Replace `xoxb-your-slack-bot-token` with your actual Slack bot token.
-- Replace `your-slack-channel-id` with the ID of the Slack channel.
-
-### 3. Adjust Script Constants (Optional)
-
-Open `turndownmusic.py` in a text editor and adjust the constants if necessary:
-
-```python
-MAX_VOLUME = 15          # Maximum allowed volume
-CHECK_INTERVAL = 30      # Time in seconds between volume checks
-DEBOUNCE_INTERVAL = 300  # Time in seconds between notifications per speaker
+pip install soco
 ```
 
 ## Usage
 
-### Running the Script
-
-Run the script using Python 3:
+### Basic Usage
 
 ```bash
+# With virtual environment activated
+python turndownmusic.py
+
+# Or directly (if dependencies are installed globally)
 python3 turndownmusic.py
 ```
 
-- The script will continuously monitor your Sonos speakers.
-- It adjusts the volume if it exceeds the `MAX_VOLUME`.
-- Sends a Slack notification when the volume is adjusted, no more than once every `DEBOUNCE_INTERVAL` seconds per speaker.
+### What the Script Does
 
-### Running the Script in the Background
+1. **Discovery Phase**: Scans your network for Sonos speakers
+2. **Status Display**: Shows each speaker's current volume, playback status, and current track
+3. **Volume Adjustment**: Gradually fades each speaker's volume to the target level (default: 5)
+4. **Progress Tracking**: Displays real-time progress and completion status
 
-To keep the script running even after closing the terminal or logging out, run it in the background or as a service.
+### Sample Output
 
-#### Using `nohup`
+```
+[14:32:15] ===== Sonos Volume Adjuster Starting =====
+[14:32:15] Discovering Sonos speakers on your network...
+[14:32:16] ✓ Network scan complete
+[14:32:16] Found 3 Sonos speakers on your network:
+[14:32:16] 1. Living Room (IP: 192.168.1.100)
+[14:32:16]    Status: 🎵 Playing
+[14:32:16]    Current volume: 25
+[14:32:16]    Playing: Your Favorite Song
+[14:32:16] Starting volume adjustment process to target volume: 5
 
-```bash
-nohup python3 turndownmusic.py &
+[14:32:16] Processing speaker 1/3: Living Room
+[14:32:16] Fading volume down for Living Room (smooth curve)...
+[14:32:18] ✓ Living Room volume adjustment complete: 5
+[14:32:18] ===== Process Complete =====
+[14:32:18] ✓ All 3 speakers adjusted to volume level 5
+[14:32:18] Total execution time: 2.3 seconds
 ```
 
-#### Using `screen`
+## Advanced Features
 
-```bash
-screen -S sonos_monitor
-python3 turndownmusic.py
-```
+### Smooth Volume Curves
 
-Detach from the screen session with `Ctrl+A` then `D`.
+The script uses mathematical S-curves (sine-based) for natural-sounding volume transitions:
+- **Ease-in-out**: Starts slow, accelerates in middle, slows at end
+- **Variable timing**: Faster steps in middle, slower at start/end
+- **Minimum steps**: At least 10 steps regardless of volume difference for smoothness
 
-#### Using `tmux`
+### Error Handling
 
-```bash
-tmux new -s sonos_monitor
-python3 turndownmusic.py
-```
-
-Detach from the tmux session with `Ctrl+B` then `D`.
-
-#### Using `systemd` Service
-
-Create a systemd service file to run the script as a service on startup.
-
-1. **Create Service File**
-
-   ```bash
-   sudo nano /etc/systemd/system/sonos_volume_monitor.service
-   ```
-
-2. **Add the Following Content**
-
-   ```ini
-   [Unit]
-   Description=Sonos Volume Monitor Service
-   After=network.target
-
-   [Service]
-   ExecStart=/usr/bin/python3 /path/to/your/project/turndownmusic.py
-   WorkingDirectory=/path/to/your/project
-   StandardOutput=inherit
-   StandardError=inherit
-   Restart=always
-   User=pi
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-   - Replace `/path/to/your/project` with the actual path to your script.
-   - Ensure `User` is set to the correct user (e.g., `pi`).
-
-3. **Reload systemd and Enable Service**
-
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable sonos_volume_monitor.service
-   sudo systemctl start sonos_volume_monitor.service
-   ```
-
-4. **Check Service Status**
-
-   ```bash
-   sudo systemctl status sonos_volume_monitor.service
-   ```
-
-## Logging
-
-The script logs its activities to both the console and a log file named `volume_monitor.log` in the project directory.
-
-- **Log Format**: Includes timestamps, log levels, and messages.
-- **Log Levels**: `INFO`, `ERROR`, etc.
-
-### Viewing Logs
-
-- **In Real-Time**:
-
-  ```bash
-  tail -f volume_monitor.log
-  ```
-
-- **Entire Log File**:
-
-  ```bash
-  cat volume_monitor.log
-  ```
+- **Network issues**: Graceful handling of speaker connectivity problems
+- **Keyboard interrupts**: Clean exit with Ctrl+C
+- **Speaker errors**: Individual speaker failures don't stop the process
+- **Bounds checking**: Volume values automatically clamped to 0-100 range
 
 ## Troubleshooting
 
-### Slack Notifications Not Appearing
+### No Speakers Found
 
-- **Ensure Bot Is Invited**: Use `/invite @SonosVolumeBot` in your Slack channel.
-- **Check Permissions**: Verify that the bot has the `chat:write` scope.
-- **Review Slack API Errors**: Errors are logged and can indicate permission issues.
+- Ensure Sonos speakers are powered on and connected to your network
+- Verify you're on the same network as your Sonos speakers
+- Check that no firewall is blocking network discovery
 
-### Script Not Discovering Speakers
+### Virtual Environment Issues
 
-- **Network Connection**: Ensure the device running the script is on the same network as your Sonos speakers.
-- **Firewall Settings**: Check that no firewall is blocking the required ports.
-- **Sonos System Updates**: Ensure your Sonos speakers are updated to the latest firmware.
+On macOS with Homebrew Python, you may need a virtual environment:
 
-### Multiple Notifications
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install soco
+python turndownmusic.py
+```
 
-- **Grouped Speakers**: The script processes only coordinator speakers to avoid duplicates.
-- **Debounce Interval**: Adjust `DEBOUNCE_INTERVAL` if notifications are too frequent.
+### Permission Errors
 
-### Error Messages in Logs
+If you get externally-managed-environment errors:
 
-- **Syntax Errors**: Ensure you are running the script with Python 3.6 or higher.
-- **Dependency Issues**: Verify that all required packages are installed.
-- **Environment Variables**: Check that the `.env` file is correctly configured.
+```bash
+# Use virtual environment (recommended)
+python3 -m venv venv
+source venv/bin/activate
+pip install soco
+
+# Or use pipx for isolated installation
+pipx run --spec soco python turndownmusic.py
+```
+
+## Customization
+
+The script can be easily modified to:
+- Change target volume (currently hardcoded to 5)
+- Adjust fade curve parameters
+- Modify timing intervals
+- Add command-line arguments
 
 ## Contributing
 
 Contributions are welcome! Please submit a pull request or open an issue to discuss changes.
 
-## License
-
-This project is licensed under the MIT License.
-
 ## Acknowledgments
 
-- **[SoCo Library](https://github.com/SoCo/SoCo)**: For providing the tools to interact with Sonos speakers.
-- **[Slack SDK for Python](https://github.com/slackapi/python-slack-sdk)**: For enabling Slack integrations.
-- **Community**: For ideas and feedback on improving the script.
+- **[SoCo Library](https://github.com/SoCo/SoCo)**: For providing the tools to interact with Sonos speakers
+- **Community**: For ideas and feedback on improving the script
