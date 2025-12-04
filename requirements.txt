@@ -1,0 +1,4 @@
+Flask==3.0.0
+flask-cors==4.0.0
+soco==0.30.4
+gunicorn==21.2.0

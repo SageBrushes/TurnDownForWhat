@@ -1,89 +1,177 @@
-# Turn Down For What - Enhanced Sonos Volume Controller
+# Turn Down For What - Sonos Volume Controller Web App
 
-A Python script that discovers Sonos speakers on your network and gradually adjusts their volume to a target level using smooth fade curves and comprehensive logging.
+A modern web application for discovering and controlling Sonos speakers on your network. Features smooth volume adjustments, real-time speaker status, and an intuitive web interface.
 
 ## Features
 
-- **Speaker Discovery**: Automatically finds all Sonos speakers on your local network
-- **Smart Volume Adjustment**: Uses smooth S-curve fading instead of harsh linear steps
-- **Speaker Status Display**: Shows current playback state (🎵 playing, ⏸️ paused, ⏹️ stopped) and track information
-- **Comprehensive Logging**: Timestamped logs with progress indicators and execution time tracking
-- **Error Handling**: Graceful handling of network issues and keyboard interrupts
-- **Skip Logic**: Automatically skips speakers already at target volume
+### Web Interface
+- **Modern, Responsive UI**: Beautiful gradient design that works on desktop and mobile
+- **Real-Time Speaker Cards**: Visual display of all speakers with current status
+- **Individual Volume Control**: Adjust each speaker independently with sliders
+- **Batch Adjustment**: Set all speakers to a target volume at once
+- **Live Activity Log**: See all operations in real-time
+- **Auto-Refresh**: Keep speaker status up-to-date
+
+### Sonos Integration
+- **Automatic Discovery**: Finds all Sonos speakers on your local network
+- **Smart Volume Adjustment**: Uses smooth S-curve fading for natural transitions
+- **Playback Status**: Shows current state (🎵 playing, ⏸️ paused, ⏹️ stopped) and track info
+- **RESTful API**: JSON API for integration with other tools
+- **Error Handling**: Graceful handling of network issues and speaker errors
 
 ## Prerequisites
 
-- **Python 3.6 or higher**: Required for f-string support and compatibility
+- **Python 3.11 or higher**: Required for running the web application
 - **Sonos Speakers**: At least one Sonos speaker connected to your network
-- **Same Network**: Device running the script must be on the same network as Sonos speakers
+- **Same Network**: Server must be on the same network as Sonos speakers
+- **Docker** (optional): For containerized deployment
 
-## Installation
+## Installation & Deployment
 
-### Clone the Repository
+### Method 1: Using the Run Script (Recommended)
 
 ```bash
+# Clone the repository
 git clone https://github.com/sagebrushes/TurnDownForWhat.git
 cd TurnDownForWhat
+
+# Run the startup script
+./run.sh
 ```
 
-### Set Up Virtual Environment (Recommended)
+The app will be available at `http://localhost:5000`
+
+### Method 2: Docker Deployment
 
 ```bash
+# Using Docker Compose
+docker-compose up -d
+
+# Or using Docker directly
+docker build -t turndownforwhat .
+docker run -p 5000:5000 --network host turndownforwhat
+```
+
+**Note**: The `--network host` flag is required for Sonos speaker discovery on the local network.
+
+### Method 3: Manual Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/sagebrushes/TurnDownForWhat.git
+cd TurnDownForWhat
+
+# Create virtual environment
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
 
-### Install Dependencies
+# Install dependencies
+pip install -r requirements.txt
 
-```bash
-pip install soco
+# Run with Flask development server (development only)
+python app.py
+
+# Or run with Gunicorn (production)
+gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 app:app
 ```
 
 ## Usage
 
-### Basic Usage
+### Web Interface
+
+1. Open your browser and navigate to `http://localhost:5000` (or your server's address)
+2. The app will automatically discover all Sonos speakers on your network
+3. View real-time status of all speakers including:
+   - Current volume level
+   - Playback state
+   - Currently playing track
+4. **Individual Control**: Use the slider on each speaker card to adjust volume
+5. **Batch Control**: Set a target volume and click "Adjust All Speakers" to fade all speakers together
+6. Monitor progress in the Activity Log at the bottom
+
+### Command Line (Legacy)
+
+The original Python script is still available:
 
 ```bash
-# With virtual environment activated
 python turndownmusic.py
-
-# Or directly (if dependencies are installed globally)
-python3 turndownmusic.py
 ```
 
-### What the Script Does
+## API Documentation
 
-1. **Discovery Phase**: Scans your network for Sonos speakers
-2. **Status Display**: Shows each speaker's current volume, playback status, and current track
-3. **Volume Adjustment**: Gradually fades each speaker's volume to the target level (default: 5)
-4. **Progress Tracking**: Displays real-time progress and completion status
+The application provides a RESTful API for integration with other tools:
 
-### Sample Output
+### Endpoints
 
+#### `GET /api/speakers`
+Returns list of all discovered speakers with current status.
+
+**Response:**
+```json
+[
+  {
+    "name": "Living Room",
+    "ip": "192.168.1.100",
+    "volume": 25,
+    "state": "PLAYING",
+    "track": "Your Favorite Song"
+  }
+]
 ```
-[14:32:15] ===== Sonos Volume Adjuster Starting =====
-[14:32:15] Discovering Sonos speakers on your network...
-[14:32:16] ✓ Network scan complete
-[14:32:16] Found 3 Sonos speakers on your network:
-[14:32:16] 1. Living Room (IP: 192.168.1.100)
-[14:32:16]    Status: 🎵 Playing
-[14:32:16]    Current volume: 25
-[14:32:16]    Playing: Your Favorite Song
-[14:32:16] Starting volume adjustment process to target volume: 5
 
-[14:32:16] Processing speaker 1/3: Living Room
-[14:32:16] Fading volume down for Living Room (smooth curve)...
-[14:32:18] ✓ Living Room volume adjustment complete: 5
-[14:32:18] ===== Process Complete =====
-[14:32:18] ✓ All 3 speakers adjusted to volume level 5
-[14:32:18] Total execution time: 2.3 seconds
+#### `POST /api/adjust`
+Adjust all speakers to target volume.
+
+**Request:**
+```json
+{
+  "target_volume": 5
+}
+```
+
+**Response:**
+```json
+{
+  "status": "started",
+  "target_volume": 5
+}
+```
+
+#### `POST /api/speaker/{name}/volume`
+Set volume for a specific speaker.
+
+**Request:**
+```json
+{
+  "volume": 15
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "volume": 15
+}
+```
+
+#### `GET /api/status`
+Get current operation status.
+
+**Response:**
+```json
+{
+  "running": true,
+  "progress": ["Found 3 speakers", "Processing Living Room..."],
+  "error": null
+}
 ```
 
 ## Advanced Features
 
 ### Smooth Volume Curves
 
-The script uses mathematical S-curves (sine-based) for natural-sounding volume transitions:
+The application uses mathematical S-curves (sine-based) for natural-sounding volume transitions:
 - **Ease-in-out**: Starts slow, accelerates in middle, slows at end
 - **Variable timing**: Faster steps in middle, slower at start/end
 - **Minimum steps**: At least 10 steps regardless of volume difference for smoothness
@@ -91,50 +179,91 @@ The script uses mathematical S-curves (sine-based) for natural-sounding volume t
 ### Error Handling
 
 - **Network issues**: Graceful handling of speaker connectivity problems
-- **Keyboard interrupts**: Clean exit with Ctrl+C
 - **Speaker errors**: Individual speaker failures don't stop the process
 - **Bounds checking**: Volume values automatically clamped to 0-100 range
+- **Concurrent operations**: Prevents multiple simultaneous adjustments
+
+## Deployment to donni.org
+
+### Prerequisites for Production
+- Server with network access to Sonos speakers
+- Domain configured to point to your server (e.g., donni.org)
+- Reverse proxy (nginx/Apache) for HTTPS support
+
+### Example Nginx Configuration
+
+```nginx
+server {
+    listen 80;
+    server_name donni.org;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+### Systemd Service (for production)
+
+Create `/etc/systemd/system/turndownforwhat.service`:
+
+```ini
+[Unit]
+Description=Turn Down For What Sonos Controller
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/TurnDownForWhat
+Environment="PATH=/opt/TurnDownForWhat/venv/bin"
+ExecStart=/opt/TurnDownForWhat/venv/bin/gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then enable and start:
+```bash
+sudo systemctl enable turndownforwhat
+sudo systemctl start turndownforwhat
+```
 
 ## Troubleshooting
 
 ### No Speakers Found
 
 - Ensure Sonos speakers are powered on and connected to your network
-- Verify you're on the same network as your Sonos speakers
-- Check that no firewall is blocking network discovery
+- Verify the server is on the same network as your Sonos speakers
+- Check that no firewall is blocking network discovery (UDP port 1900)
+- If using Docker, ensure `--network host` is set
 
-### Virtual Environment Issues
+### Web Interface Not Loading
 
-On macOS with Homebrew Python, you may need a virtual environment:
+- Check that the server is running: `ps aux | grep gunicorn`
+- Verify port 5000 is accessible: `netstat -tulpn | grep 5000`
+- Check logs for errors
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install soco
-python turndownmusic.py
-```
+### Volume Adjustments Not Working
 
-### Permission Errors
-
-If you get externally-managed-environment errors:
-
-```bash
-# Use virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate
-pip install soco
-
-# Or use pipx for isolated installation
-pipx run --spec soco python turndownmusic.py
-```
+- Ensure speakers are not grouped (grouped speakers may behave differently)
+- Check network connectivity between server and speakers
+- Verify no other applications are controlling the speakers
 
 ## Customization
 
-The script can be easily modified to:
-- Change target volume (currently hardcoded to 5)
-- Adjust fade curve parameters
-- Modify timing intervals
-- Add command-line arguments
+The application can be customized by modifying:
+
+- **`app.py`**: Backend logic, API endpoints, adjustment algorithms
+- **`templates/index.html`**: UI design, colors, layout
+- **Target volumes**: Change default values in the frontend or backend
+- **Fade curves**: Adjust the mathematical curve in the `adjust_volume_background` function
+- **Timing**: Modify sleep intervals for faster/slower adjustments
 
 ## Contributing
 
