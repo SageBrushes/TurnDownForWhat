@@ -1,0 +1,11 @@
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+soco>=0.30.1
+elevenlabs>=1.0.0
+python-dotenv>=1.0.0
+websockets>=12.0
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+apscheduler>=3.10.4
+ifaddr>=0.2.0
+jinja2>=3.1.2
