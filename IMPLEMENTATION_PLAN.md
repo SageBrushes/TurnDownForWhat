@@ -47,16 +47,23 @@ TurnDownForWhat/
 │   └── utils/
 │       ├── __init__.py
 │       ├── network.py              # Local IP detection
-│       └── async_helpers.py        # asyncio.to_thread wrappers
+│       ├── async_helpers.py        # asyncio.to_thread wrappers
+│       └── errors.py               # Standard error response helpers
 │
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py                 # Pytest fixtures
+│   ├── test_config.py
+│   ├── test_network.py
+│   ├── test_utils.py
 │   ├── test_sonos_service.py
 │   ├── test_tts_service.py
+│   ├── test_cleanup_service.py
 │   ├── test_websocket_manager.py
 │   ├── test_api_speakers.py
 │   ├── test_api_tts.py
+│   ├── test_websocket_api.py
+│   ├── test_main.py
 │   └── test_integration.py
 │
 ├── static/
@@ -89,15 +96,19 @@ TurnDownForWhat/
 #### Tasks:
 1. Create project structure (directories)
 2. Write `app/config.py` with Pydantic BaseSettings
+   - **Note:** Configure to load from `.env` file using `python-dotenv`
+   - Include `ELEVENLABS_API_KEY`, `HOST`, `PORT`, optional `API_KEY` for auth
 3. Write `app/utils/network.py` for local IP detection
 4. Write `app/utils/async_helpers.py` for asyncio wrappers
 5. Create `requirements.txt` and `requirements-dev.txt`
-6. Create `.env.example`
+6. Create `.env.example` with all required environment variables
 7. Write `pytest.ini` configuration
+8. Define standard error response format for API consistency
 
 #### Test Files:
-- `tests/test_config.py` - Test settings loading
+- `tests/test_config.py` - Test settings loading from .env
 - `tests/test_network.py` - Test IP detection
+- `tests/test_utils.py` - Test error response format helper
 - `tests/conftest.py` - Shared fixtures
 
 #### TDD Approach:
@@ -129,6 +140,8 @@ TurnDownForWhat/
   - Test async wrappers
   - Test fade algorithm with mocked speakers
   - Test error handling (unreachable speaker)
+  - **Critical:** Test speaker becoming unreachable during volume fade
+  - **Critical:** Test concurrent requests to same speaker (race conditions)
 
 #### TDD Approach:
 - **Test First:**
@@ -167,9 +180,12 @@ Converting synchronous `soco` calls to async without blocking
   - Test audio file creation
   - Test URL generation
   - Test error handling (API failure)
+  - **Critical:** Test invalid/missing API key handling
+  - **Critical:** Test rate limit error handling
 - `tests/test_cleanup_service.py`
   - Test file age detection
   - Test deletion logic
+  - **Critical:** Test file locking (deleting audio while being played)
 
 #### TDD Approach:
 - **Test First:**
@@ -246,7 +262,8 @@ Converting synchronous `soco` calls to async without blocking
 - `tests/test_api_speakers.py`
   - Test each endpoint with `TestClient`
   - Test validation (invalid IP, invalid volume)
-  - Test error responses
+  - Test standard error response format
+  - Test error responses (speaker unreachable, invalid parameters)
   - Mock `sonos_service` methods
 
 #### TDD Approach:
@@ -309,10 +326,11 @@ Converting synchronous `soco` calls to async without blocking
    - Error handling
 
 2. Write `app/main.py` with lifespan events
+   - **Ensure `static/audio/` directory exists on startup**
    - Start speaker discovery background task
    - Start cleanup background task
    - Initialize WebSocket manager
-   - Mount static files
+   - Mount static files and configure proper Content-Type headers
 
 #### Test Files:
 - `tests/test_websocket_api.py`
@@ -337,7 +355,7 @@ Converting synchronous `soco` calls to async without blocking
 
 ### **Package H: Frontend Development**
 **Agent Focus:** HTML/CSS/JS interface
-**Estimated Time:** 1.5 hours
+**Estimated Time:** 2-3 hours
 
 #### Tasks:
 1. Write `templates/index.html`
@@ -368,7 +386,7 @@ Converting synchronous `soco` calls to async without blocking
 
 ### **Package I: Integration Tests & Documentation**
 **Agent Focus:** End-to-end tests, README
-**Estimated Time:** 45 minutes
+**Estimated Time:** 1.5-2 hours
 
 #### Tasks:
 1. Write `tests/test_integration.py`
@@ -527,6 +545,31 @@ pytest -s
 
 ---
 
+## Standard Error Response Format
+
+All API endpoints should return errors in a consistent JSON format:
+
+```json
+{
+  "detail": "Human-readable error message",
+  "error_code": "SPEAKER_UNREACHABLE",
+  "timestamp": "2024-12-10T21:00:00Z"
+}
+```
+
+**Common Error Codes:**
+- `SPEAKER_UNREACHABLE` - Cannot connect to speaker
+- `INVALID_VOLUME` - Volume not in range 0-100
+- `TTS_GENERATION_FAILED` - ElevenLabs API error
+- `INVALID_API_KEY` - Missing/invalid ElevenLabs key
+- `RATE_LIMIT_EXCEEDED` - Too many requests
+- `FILE_NOT_FOUND` - Audio file doesn't exist
+- `CONCURRENT_OPERATION` - Operation already in progress
+
+Implement in `app/utils/errors.py` with helper functions.
+
+---
+
 ## Critical Gemini Insights to Remember
 
 1. **Always wrap `soco` calls with `asyncio.to_thread()`**
@@ -538,7 +581,7 @@ pytest -s
 ---
 
 ## Estimated Total Time
-- Development: ~7 hours
-- Testing: ~2 hours
-- Documentation: ~1 hour
-**Total: ~10 hours** (across parallel agents, ~4-5 hours wall time)
+- Development: ~8 hours
+- Testing: ~2.5 hours
+- Documentation: ~1.5 hours
+**Total: ~12 hours** (across parallel agents, ~5-6 hours wall time with 20-30% buffer)
