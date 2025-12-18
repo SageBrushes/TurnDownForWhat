@@ -324,3 +324,20 @@ def create_error_message(error_code: str, message: str, **kwargs) -> Dict:
     data.update(kwargs)
 
     return {"type": "error", "data": data}
+
+
+# Singleton accessor
+_manager_instance: ConnectionManager = None
+
+
+def get_connection_manager() -> ConnectionManager:
+    """
+    Get the singleton ConnectionManager instance.
+
+    Returns:
+        The global ConnectionManager instance
+    """
+    global _manager_instance
+    if _manager_instance is None:
+        _manager_instance = ConnectionManager()
+    return _manager_instance

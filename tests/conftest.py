@@ -5,6 +5,7 @@ import pytest
 from pathlib import Path
 from typing import Generator
 import tempfile
+from unittest.mock import Mock, PropertyMock
 
 # Add app directory to Python path for imports
 app_dir = Path(__file__).parent.parent
@@ -23,6 +24,26 @@ def clean_env():
     # Restore original environment after test
     os.environ.clear()
     os.environ.update(original_env)
+
+
+@pytest.fixture(autouse=True)
+async def clear_sonos_cache():
+    """Automatically clear Sonos service cache before each test."""
+    # Clear before test
+    try:
+        from app.services import sonos_service
+        await sonos_service.clear_speaker_cache()
+    except:
+        pass
+
+    yield
+
+    # Clear after test
+    try:
+        from app.services import sonos_service
+        await sonos_service.clear_speaker_cache()
+    except:
+        pass
 
 
 @pytest.fixture
@@ -143,3 +164,67 @@ def pytest_collection_modifyitems(items):
     for item in items:
         if "asyncio" in item.keywords:
             item.add_marker(pytest.mark.asyncio)
+
+
+# Sonos Service Mock Fixtures
+@pytest.fixture
+def mock_speaker():
+    """Create a mock SoCo speaker object with full properties."""
+    speaker = Mock()
+    speaker.ip_address = "192.168.1.100"
+    speaker.player_name = "Living Room"
+    speaker.volume = 50
+    speaker.is_coordinator = True
+
+    # Mock transport info
+    speaker.get_current_transport_info.return_value = {
+        "current_transport_state": "PLAYING"
+    }
+
+    # Mock track info
+    speaker.get_current_track_info.return_value = {
+        "title": "Test Track",
+        "artist": "Test Artist",
+        "album": "Test Album",
+    }
+
+    # Mock control methods
+    speaker.play = Mock()
+    speaker.pause = Mock()
+    speaker.stop = Mock()
+    speaker.play_uri = Mock()
+    speaker.clear_queue = Mock()
+
+    return speaker
+
+
+@pytest.fixture
+def mock_multiple_speakers():
+    """Create a list of mock SoCo speaker objects."""
+    speakers = []
+
+    speaker_data = [
+        ("192.168.1.100", "Living Room", 50, True),
+        ("192.168.1.101", "Bedroom", 30, True),
+        ("192.168.1.102", "Kitchen", 40, True),
+    ]
+
+    for ip, name, volume, is_coord in speaker_data:
+        speaker = Mock()
+        speaker.ip_address = ip
+        speaker.player_name = name
+        speaker.volume = volume
+        speaker.is_coordinator = is_coord
+
+        speaker.get_current_transport_info = Mock(return_value={
+            "current_transport_state": "PLAYING"
+        })
+        speaker.get_current_track_info = Mock(return_value={
+            "title": "Test Track",
+            "artist": "Test Artist",
+            "album": "Test Album",
+        })
+
+        speakers.append(speaker)
+
+    return speakers
