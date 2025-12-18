@@ -81,13 +81,17 @@ async def discover_speakers(force_refresh: bool = False) -> List[Dict]:
                 # Skip speakers that fail info gathering
                 continue
 
-        # Update cache
-        _speaker_cache = speaker_list
-        _cache_timestamp = datetime.now()
+        # Update cache only if discovery was successful
+        if speaker_list or not _speaker_cache:
+            _speaker_cache = speaker_list
+            _cache_timestamp = datetime.now()
 
         return speaker_list
 
     except Exception as e:
+        # If discovery fails but we have cached data, log error but return cache
+        if _speaker_cache:
+            return _speaker_cache
         raise Exception(f"Speaker discovery failed: {str(e)}")
 
 

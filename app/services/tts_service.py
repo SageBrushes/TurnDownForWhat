@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 import re
 
 try:
-    from elevenlabs import ElevenLabs, Voice as ElevenLabsVoice
+    from elevenlabs.client import ElevenLabs, Voice as ElevenLabsVoice
 except ImportError:
     # Allow imports during testing when elevenlabs may not be installed
     ElevenLabs = None
@@ -56,7 +56,7 @@ async def generate_tts_audio(
     text: str,
     voice: str,
     api_key: str,
-    model: str = "eleven_monolingual_v1"
+    model: str = "eleven_turbo_v2_5"  # Free tier compatible model
 ) -> str:
     """
     Generate TTS audio and save to file.
@@ -153,22 +153,38 @@ async def get_available_voices(api_key: str) -> List[Voice]:
     try:
         def _get_voices():
             """Synchronous function to get voices."""
-            client = ElevenLabs(api_key=api_key)
-            response = client.voices.get_all()
-            return response.voices
+            import requests
+
+            # Use direct API call to avoid SDK Pydantic validation issues
+            headers = {"xi-api-key": api_key}
+            response = requests.get(
+                "https://api.elevenlabs.io/v1/voices",
+                headers=headers,
+                timeout=10
+            )
+
+            if response.status_code == 401:
+                raise InvalidAPIKeyError("Invalid API key")
+            elif response.status_code == 429:
+                raise RateLimitError("Rate limit exceeded")
+            elif response.status_code != 200:
+                raise TTSError(f"API error: {response.status_code}")
+
+            data = response.json()
+            return data.get('voices', [])
 
         # Run in thread pool
-        voices = await asyncio.to_thread(_get_voices)
+        voices_data = await asyncio.to_thread(_get_voices)
 
         # Convert to our Voice model
         voice_list = []
-        for v in voices:
+        for v in voices_data:
             voice_list.append(
                 Voice(
-                    voice_id=v.voice_id,
-                    name=v.name,
-                    category=v.category,
-                    labels=v.labels if hasattr(v, 'labels') else {}
+                    voice_id=v.get('voice_id', ''),
+                    name=v.get('name', 'Unknown'),
+                    category=v.get('category', ''),
+                    labels=v.get('labels', {})
                 )
             )
 

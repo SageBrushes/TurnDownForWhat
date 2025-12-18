@@ -690,10 +690,10 @@ class SonosApp {
         // Add voice options
         this.voices.forEach(voice => {
             const option = document.createElement('option');
-            // Handle both {id, name} objects and plain strings
-            if (typeof voice === 'object' && voice.id) {
-                option.value = voice.id;
-                option.textContent = voice.name || voice.id;
+            // Handle both {voice_id, name} objects and plain strings
+            if (typeof voice === 'object' && (voice.voice_id || voice.id)) {
+                option.value = voice.voice_id || voice.id;
+                option.textContent = voice.name || voice.voice_id || voice.id;
             } else {
                 option.value = voice;
                 option.textContent = voice;
@@ -704,7 +704,7 @@ class SonosApp {
         // Select first voice by default
         if (this.voices.length > 0) {
             const firstVoice = this.voices[0];
-            select.value = typeof firstVoice === 'object' ? firstVoice.id : firstVoice;
+            select.value = typeof firstVoice === 'object' ? (firstVoice.voice_id || firstVoice.id) : firstVoice;
         }
     }
 

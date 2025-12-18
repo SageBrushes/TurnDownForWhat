@@ -15,9 +15,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 
 from app.api import speakers, tts, websocket
 from app.services import cleanup_service, sonos_service
@@ -33,6 +35,9 @@ logger = logging.getLogger(__name__)
 
 # Audio directory path
 AUDIO_DIR = Path(__file__).parent.parent / "static" / "audio"
+
+# Templates directory
+templates = Jinja2Templates(directory="templates")
 
 
 # Background task functions
@@ -221,14 +226,26 @@ async def health_check():
     }
 
 
-# Root endpoint
-@app.get("/")
-async def root():
+# Root endpoint - Serve the HTML dashboard
+@app.get("/", response_class=HTMLResponse)
+async def root(request: Request):
     """
-    Root endpoint with service information.
+    Serve the main Sonos control dashboard.
 
     Returns:
-        dict: Service information
+        HTML: The main dashboard interface
+    """
+    return templates.TemplateResponse("index.html", {"request": request})
+
+
+# API info endpoint
+@app.get("/api")
+async def api_info():
+    """
+    API information endpoint.
+
+    Returns:
+        dict: Service and endpoint information
     """
     return {
         "service": "Sonos TTS Web Service",
