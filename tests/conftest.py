@@ -1,9 +1,14 @@
 """Pytest configuration and shared fixtures for all tests."""
 import os
+import sys
 import pytest
 from pathlib import Path
 from typing import Generator
 import tempfile
+
+# Add app directory to Python path for imports
+app_dir = Path(__file__).parent.parent
+sys.path.insert(0, str(app_dir))
 
 
 @pytest.fixture(autouse=True)

@@ -33,7 +33,6 @@ env/
 *.swp
 *.swo
 *~
-.DS_Store
 
 # Testing
 .pytest_cache/
@@ -58,6 +57,7 @@ static/audio/*.wav
 .DS_Store
 .AppleDouble
 .LSOverride
+Thumbs.db
 
 # Mypy
 .mypy_cache/
