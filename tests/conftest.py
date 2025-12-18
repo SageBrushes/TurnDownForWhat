@@ -228,3 +228,43 @@ def mock_multiple_speakers():
         speakers.append(speaker)
 
     return speakers
+
+
+# FastAPI App Fixtures
+@pytest.fixture
+def app(mock_env_vars):
+    """Create FastAPI app instance for testing."""
+    from app.main import app as fastapi_app
+    return fastapi_app
+
+
+@pytest.fixture
+def app_client(app, mock_env_vars):
+    """Create TestClient for making API requests."""
+    from fastapi.testclient import TestClient
+    return TestClient(app)
+
+
+@pytest.fixture
+def test_client(app_client):
+    """Alias for app_client for backward compatibility with existing tests."""
+    return app_client
+
+
+@pytest.fixture
+def connection_manager():
+    """Get ConnectionManager instance for testing."""
+    from app.services.websocket_manager import ConnectionManager
+    manager = ConnectionManager()
+    # Clear any existing connections before test
+    manager.active_connections.clear()
+    yield manager
+    # Clear connections after test
+    manager.active_connections.clear()
+
+
+@pytest.fixture
+def mock_settings(mock_env_vars):
+    """Get Settings instance with mocked environment variables."""
+    from app.config import Settings
+    return Settings()
