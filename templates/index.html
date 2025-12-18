@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonos TTS Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        sonos: '#000000',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900">Sonos Control Center</h1>
+                    <p class="text-gray-600 mt-2">Control your Sonos speakers with text-to-speech</p>
+                </div>
+                <div id="connection-status" class="flex items-center gap-2 px-4 py-2 bg-white rounded-lg shadow-sm">
+                    <div id="status-indicator" class="w-3 h-3 rounded-full bg-gray-400 animate-pulse"></div>
+                    <span id="status-text" class="text-sm text-gray-600">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- TTS Form Section -->
+        <section class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Text-to-Speech</h2>
+            <form id="tts-form" class="space-y-4">
+                <div>
+                    <label for="tts-text" class="block text-sm font-medium text-gray-700 mb-2">Message</label>
+                    <textarea
+                        id="tts-text"
+                        name="text"
+                        rows="3"
+                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                        placeholder="Enter text to speak..."
+                        required
+                        maxlength="500"></textarea>
+                    <p class="text-xs text-gray-500 mt-1"><span id="char-count">0</span>/500 characters</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="voice-select" class="block text-sm font-medium text-gray-700 mb-2">Voice</label>
+                        <select
+                            id="voice-select"
+                            name="voice"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <option value="">Loading voices...</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="speaker-select" class="block text-sm font-medium text-gray-700 mb-2">Target Speakers</label>
+                        <select
+                            id="speaker-select"
+                            name="speakers"
+                            multiple
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            size="3">
+                            <option value="">Loading speakers...</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button
+                        type="submit"
+                        id="tts-submit-btn"
+                        class="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
+                        <span id="tts-btn-text">Generate & Play</span>
+                        <span id="tts-btn-spinner" class="hidden ml-2">
+                            <svg class="animate-spin inline h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </span>
+                    </button>
+
+                    <div id="tts-status" class="hidden px-4 py-2 rounded-lg"></div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Master Controls -->
+        <section class="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Master Controls</h2>
+            <div class="flex flex-wrap gap-3">
+                <button
+                    id="fade-all-btn"
+                    class="px-4 py-2 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors">
+                    Fade All to 0%
+                </button>
+                <button
+                    id="stop-all-btn"
+                    class="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+                    Stop All
+                </button>
+                <button
+                    id="refresh-speakers-btn"
+                    class="px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
+                    Refresh Speakers
+                </button>
+            </div>
+        </section>
+
+        <!-- Speakers Grid -->
+        <section>
+            <h2 class="text-2xl font-semibold text-gray-900 mb-4">Speakers</h2>
+            <div id="speakers-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Speaker cards will be dynamically inserted here -->
+                <div class="col-span-full text-center py-12">
+                    <div class="animate-pulse">
+                        <div class="text-gray-400 mb-2">
+                            <svg class="animate-spin inline h-8 w-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-500">Loading speakers...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Error Toast -->
+        <div id="error-toast" class="hidden fixed bottom-4 right-4 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg max-w-md animate-slide-up">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="flex-1">
+                    <p class="font-medium" id="error-toast-title">Error</p>
+                    <p class="text-sm mt-1" id="error-toast-message"></p>
+                </div>
+                <button onclick="document.getElementById('error-toast').classList.add('hidden')" class="flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Success Toast -->
+        <div id="success-toast" class="hidden fixed bottom-4 right-4 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg max-w-md animate-slide-up">
+            <div class="flex items-start gap-3">
+                <svg class="w-6 h-6 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div class="flex-1">
+                    <p class="font-medium" id="success-toast-message"></p>
+                </div>
+                <button onclick="document.getElementById('success-toast').classList.add('hidden')" class="flex-shrink-0">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Speaker Card Template -->
+    <template id="speaker-card-template">
+        <div class="speaker-card bg-white rounded-xl shadow-lg p-6 transition-all hover:shadow-xl" data-speaker-ip="">
+            <div class="flex items-start justify-between mb-4">
+                <div class="flex-1">
+                    <h3 class="speaker-name text-xl font-semibold text-gray-900"></h3>
+                    <p class="speaker-ip text-sm text-gray-500 mt-1"></p>
+                </div>
+                <div class="speaker-status text-2xl" title="Status"></div>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Volume Control -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="text-sm font-medium text-gray-700">Volume</label>
+                        <span class="speaker-volume-value text-sm font-semibold text-blue-600"></span>
+                    </div>
+                    <input
+                        type="range"
+                        class="speaker-volume-slider w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                        min="0"
+                        max="100"
+                        value="0">
+                </div>
+
+                <!-- Now Playing -->
+                <div class="pt-3 border-t border-gray-200">
+                    <p class="text-xs text-gray-500 mb-1">Now Playing</p>
+                    <p class="speaker-track text-sm text-gray-900 truncate"></p>
+                </div>
+
+                <!-- Controls -->
+                <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                    <button class="speaker-play-btn flex-1 px-3 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
+                        Play
+                    </button>
+                    <button class="speaker-pause-btn flex-1 px-3 py-2 bg-yellow-500 text-white text-sm font-medium rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors">
+                        Pause
+                    </button>
+                    <button class="speaker-stop-btn flex-1 px-3 py-2 bg-red-500 text-white text-sm font-medium rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
+                        Stop
+                    </button>
+                </div>
+
+                <button class="speaker-fade-btn w-full px-3 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors">
+                    Fade to 0%
+                </button>
+
+                <button class="speaker-tts-btn w-full px-3 py-2 bg-blue-500 text-white text-sm font-medium rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
+                    Quick TTS
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script src="/static/js/websocket.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
