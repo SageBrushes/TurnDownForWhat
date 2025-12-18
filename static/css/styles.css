@@ -1,0 +1,574 @@
+/**
+ * Custom Styles for Sonos TTS Control Center
+ * Extends Tailwind CSS with custom animations and component styles
+ */
+
+/* ===========================
+   Global Styles
+   =========================== */
+
+:root {
+    --color-sonos: #000000;
+    --color-primary: #3B82F6;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    --transition-fast: 150ms ease-in-out;
+    --transition-normal: 300ms ease-in-out;
+    --transition-slow: 500ms ease-in-out;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+        sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* ===========================
+   Volume Slider Styles
+   =========================== */
+
+.speaker-volume-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    background: linear-gradient(to right, #3B82F6 0%, #3B82F6 50%, #E5E7EB 50%, #E5E7EB 100%);
+    border-radius: 4px;
+    outline: none;
+    transition: background var(--transition-normal);
+}
+
+.speaker-volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #3B82F6;
+    border: 3px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-fast);
+}
+
+.speaker-volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.speaker-volume-slider::-webkit-slider-thumb:active {
+    transform: scale(1.05);
+    background: #2563EB;
+}
+
+.speaker-volume-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #3B82F6;
+    border: 3px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition-fast);
+}
+
+.speaker-volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.speaker-volume-slider::-moz-range-thumb:active {
+    transform: scale(1.05);
+    background: #2563EB;
+}
+
+/* Update slider background based on value using JavaScript */
+.speaker-volume-slider::-webkit-slider-runnable-track {
+    border-radius: 4px;
+}
+
+.speaker-volume-slider::-moz-range-track {
+    border-radius: 4px;
+}
+
+/* ===========================
+   Fading Animation
+   =========================== */
+
+.speaker-volume-slider.fading {
+    animation: fade-pulse 1s ease-in-out infinite;
+}
+
+@keyframes fade-pulse {
+    0%, 100% {
+        opacity: 1;
+        filter: brightness(1);
+    }
+    50% {
+        opacity: 0.7;
+        filter: brightness(1.2);
+    }
+}
+
+/* Visual feedback during fade */
+.speaker-card .fading ~ .speaker-volume-value {
+    animation: value-glow 1s ease-in-out infinite;
+}
+
+@keyframes value-glow {
+    0%, 100% {
+        color: #3B82F6;
+    }
+    50% {
+        color: #F59E0B;
+    }
+}
+
+/* ===========================
+   Loading Spinner Styles
+   =========================== */
+
+.spinner {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spinner-rotate 0.6s linear infinite;
+}
+
+@keyframes spinner-rotate {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Larger spinner for loading states */
+.spinner-lg {
+    width: 2em;
+    height: 2em;
+    border-width: 3px;
+}
+
+/* ===========================
+   Toast Animations
+   =========================== */
+
+@keyframes slide-up {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-down {
+    from {
+        transform: translateY(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+}
+
+.animate-slide-up {
+    animation: slide-up var(--transition-normal) ease-out;
+}
+
+.animate-slide-down {
+    animation: slide-down var(--transition-normal) ease-in;
+}
+
+/* Toast container positioning */
+#error-toast,
+#success-toast {
+    z-index: 9999;
+    animation: slide-up var(--transition-normal) ease-out;
+}
+
+#error-toast.hidden,
+#success-toast.hidden {
+    animation: slide-down var(--transition-normal) ease-in;
+}
+
+/* ===========================
+   Speaker Card Styles
+   =========================== */
+
+.speaker-card {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Card hover effect */
+.speaker-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Playing state indicator */
+.speaker-card.speaker-playing {
+    border: 2px solid var(--color-success);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1), var(--shadow-lg);
+}
+
+/* Fading state indicator */
+.speaker-card.speaker-fading {
+    border: 2px solid var(--color-warning);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1), var(--shadow-lg);
+}
+
+/* Status indicator animation */
+.speaker-status {
+    display: inline-block;
+    transition: transform var(--transition-fast);
+}
+
+.speaker-card:hover .speaker-status {
+    transform: scale(1.2);
+}
+
+/* Track info scrolling for long text */
+.speaker-track {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.speaker-track:hover {
+    animation: scroll-text 5s linear infinite;
+}
+
+@keyframes scroll-text {
+    0% {
+        transform: translateX(0);
+    }
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+/* ===========================
+   Button Styles
+   =========================== */
+
+button {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Button ripple effect */
+button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width var(--transition-normal), height var(--transition-normal);
+}
+
+button:active::before {
+    width: 200px;
+    height: 200px;
+}
+
+/* Disabled button styles */
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+button:disabled::before {
+    display: none;
+}
+
+/* ===========================
+   Form Elements
+   =========================== */
+
+/* Textarea auto-resize */
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Focus styles */
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Select multiple styling */
+select[multiple] {
+    padding: 0;
+}
+
+select[multiple] option {
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+select[multiple] option:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+select[multiple] option:checked {
+    background: var(--color-primary);
+    color: white;
+}
+
+/* ===========================
+   Connection Status Indicator
+   =========================== */
+
+#connection-status {
+    user-select: none;
+}
+
+#status-indicator {
+    transition: background-color var(--transition-normal);
+}
+
+#status-indicator.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ===========================
+   Loading States
+   =========================== */
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+}
+
+.loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-xl);
+    text-align: center;
+}
+
+/* Skeleton loading animation */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ===========================
+   Utility Classes
+   =========================== */
+
+.fade-in {
+    animation: fade-in var(--transition-normal) ease-in;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.fade-out {
+    animation: fade-out var(--transition-normal) ease-out;
+}
+
+@keyframes fade-out {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.scale-in {
+    animation: scale-in var(--transition-normal) ease-out;
+}
+
+@keyframes scale-in {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ===========================
+   Responsive Adjustments
+   =========================== */
+
+@media (max-width: 768px) {
+    .speaker-card {
+        font-size: 0.9rem;
+    }
+
+    .speaker-volume-slider::-webkit-slider-thumb {
+        width: 18px;
+        height: 18px;
+    }
+
+    .speaker-volume-slider::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+    }
+
+    button {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+@media (max-width: 640px) {
+    #error-toast,
+    #success-toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        max-width: none;
+    }
+}
+
+/* ===========================
+   Accessibility Improvements
+   =========================== */
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    button {
+        border: 2px solid currentColor;
+    }
+
+    .speaker-volume-slider::-webkit-slider-thumb {
+        border-width: 2px;
+        border-color: currentColor;
+    }
+
+    .speaker-volume-slider::-moz-range-thumb {
+        border-width: 2px;
+        border-color: currentColor;
+    }
+}
+
+/* ===========================
+   Print Styles
+   =========================== */
+
+@media print {
+    #error-toast,
+    #success-toast,
+    button,
+    .speaker-volume-slider {
+        display: none !important;
+    }
+
+    .speaker-card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+}
+
+/* ===========================
+   Custom Scrollbar
+   =========================== */
+
+/* Webkit browsers (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #888 #f1f1f1;
+}
