@@ -128,7 +128,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.error(f"Failed to create audio directory: {e}", exc_info=True)
         # Continue anyway - we'll handle this at runtime if needed
 
-    # 2. Start background tasks
+    # 2. Initial speaker discovery to populate cache
+    try:
+        speakers = await sonos_service.discover_speakers()
+        logger.info(f"Initial speaker discovery: found {len(speakers)} speaker(s)")
+    except Exception as e:
+        logger.warning(f"Initial speaker discovery failed (will retry in background): {e}")
+
+    # 3. Start background tasks
     discovery_task = None
     cleanup_task = None
 

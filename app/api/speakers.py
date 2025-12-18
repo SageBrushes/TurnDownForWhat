@@ -92,7 +92,7 @@ async def set_speaker_volume(ip: str, request: VolumeRequest):
         # Broadcast update via WebSocket
         try:
             manager = get_connection_manager()
-            await manager.broadcast(create_speaker_update_message(ip, {"volume": request.volume}))
+            await manager.broadcast(create_speaker_update_message(ip, volume=request.volume))
         except Exception:
             # Don't fail the request if WebSocket broadcast fails
             pass
@@ -134,8 +134,15 @@ async def fade_speaker_volume(ip: str, request: FadeRequest):
         """Broadcast fade progress via WebSocket."""
         try:
             progress_percent = int((current_step / total_steps) * 100)
+            # Get current speaker status to get actual volume
+            try:
+                status = await sonos_service.get_speaker_status(ip)
+                current_vol = status.get("volume", 0)
+            except:
+                current_vol = 0
+
             await manager.broadcast(
-                create_fade_progress_message(ip, current_step, total_steps, progress_percent)
+                create_fade_progress_message(ip, progress_percent, current_vol, request.target_volume)
             )
         except Exception:
             # Don't let broadcast errors break the fade
@@ -150,7 +157,7 @@ async def fade_speaker_volume(ip: str, request: FadeRequest):
 
         # Broadcast final update
         try:
-            await manager.broadcast(create_speaker_update_message(ip, {"volume": request.target_volume}))
+            await manager.broadcast(create_speaker_update_message(ip, volume=request.target_volume))
         except Exception:
             pass
 
@@ -185,7 +192,7 @@ async def play_speaker(ip: str):
         # Broadcast update via WebSocket
         try:
             manager = get_connection_manager()
-            await manager.broadcast(create_speaker_update_message(ip, {"is_playing": True}))
+            await manager.broadcast(create_speaker_update_message(ip, is_playing=True))
         except Exception:
             pass
 
@@ -220,7 +227,7 @@ async def pause_speaker(ip: str):
         # Broadcast update via WebSocket
         try:
             manager = get_connection_manager()
-            await manager.broadcast(create_speaker_update_message(ip, {"is_playing": False, "is_paused": True}))
+            await manager.broadcast(create_speaker_update_message(ip, is_playing=False, is_paused=True))
         except Exception:
             pass
 
@@ -255,7 +262,7 @@ async def stop_speaker(ip: str):
         # Broadcast update via WebSocket
         try:
             manager = get_connection_manager()
-            await manager.broadcast(create_speaker_update_message(ip, {"is_playing": False, "is_stopped": True}))
+            await manager.broadcast(create_speaker_update_message(ip, is_playing=False, is_stopped=True))
         except Exception:
             pass
 
@@ -293,7 +300,7 @@ async def set_all_speakers_volume(request: SetAllVolumesRequest):
             for speaker_result in result["results"]:
                 if "ip" in speaker_result:
                     await manager.broadcast(
-                        create_speaker_update_message(speaker_result["ip"], {"volume": request.volume})
+                        create_speaker_update_message(speaker_result["ip"], volume=request.volume)
                     )
         except Exception:
             pass
