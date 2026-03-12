@@ -21,20 +21,41 @@ from app.utils.errors import create_error_response, ErrorCode, error_response
 router = APIRouter(prefix="/api/speakers", tags=["speakers"])
 
 
-@router.get("", response_model=List[SpeakerInfo])
+@router.get("", response_model=List[SpeakerStatus])
 async def list_speakers():
     """
-    List all discovered Sonos speakers.
+    List all discovered Sonos speakers with full status.
 
-    Returns a list of all speakers found on the network with their basic info.
-    Uses caching to avoid repeated network scans.
+    Returns detailed status for each speaker including:
+    - Basic info (ip, name, volume)
+    - Playback state (PLAYING, PAUSED, STOPPED)
+    - Current track information
 
     Returns:
-        List of speaker objects with ip, name, volume, is_coordinator
+        List of speaker status objects with complete current state
     """
     try:
+        # Get basic speaker list from discovery cache
         speakers = await sonos_service.discover_speakers()
-        return speakers
+
+        # Fetch full status for each speaker
+        detailed_speakers = []
+        for speaker in speakers:
+            try:
+                status_data = await sonos_service.get_speaker_status(speaker["ip"])
+                detailed_speakers.append(status_data)
+            except Exception as e:
+                # If status fails, use basic info with defaults
+                detailed_speakers.append({
+                    **speaker,
+                    "transport_state": "UNKNOWN",
+                    "is_playing": False,
+                    "is_paused": False,
+                    "is_stopped": True,
+                    "current_track": {"title": "", "artist": "", "album": ""}
+                })
+
+        return detailed_speakers
     except Exception as e:
         raise create_error_response(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

@@ -226,9 +226,9 @@ class SonosApp {
         card.querySelector('.speaker-ip').textContent = speaker.ip;
 
         // Set status emoji
-        const statusEmoji = this.getStatusEmoji(speaker.state);
+        const statusEmoji = this.getStatusEmoji(speaker.transport_state);
         card.querySelector('.speaker-status').textContent = statusEmoji;
-        card.querySelector('.speaker-status').setAttribute('title', speaker.state || 'Unknown');
+        card.querySelector('.speaker-status').setAttribute('title', speaker.transport_state || 'Unknown');
 
         // Set volume
         const volumeSlider = card.querySelector('.speaker-volume-slider');
@@ -238,7 +238,10 @@ class SonosApp {
         volumeValue.textContent = `${volume}%`;
 
         // Set track info
-        const trackInfo = speaker.track_info || speaker.current_track || 'Nothing playing';
+        let trackInfo = 'Nothing playing';
+        if (speaker.current_track && speaker.current_track.title) {
+            trackInfo = `${speaker.current_track.title}${speaker.current_track.artist ? ' - ' + speaker.current_track.artist : ''}`;
+        }
         card.querySelector('.speaker-track').textContent = trackInfo;
 
         // Setup volume slider handler
@@ -309,14 +312,15 @@ class SonosApp {
         }
 
         // Update status
-        if (speakerData.state) {
-            const statusEmoji = this.getStatusEmoji(speakerData.state);
+        if (speakerData.transport_state || speakerData.state) {
+            const state = speakerData.transport_state || speakerData.state;
+            const statusEmoji = this.getStatusEmoji(state);
             const statusElement = card.querySelector('.speaker-status');
             statusElement.textContent = statusEmoji;
-            statusElement.setAttribute('title', speakerData.state);
+            statusElement.setAttribute('title', state);
 
             // Add visual indicator for playing state
-            if (speakerData.state === 'PLAYING') {
+            if (state === 'PLAYING') {
                 card.classList.add('speaker-playing');
             } else {
                 card.classList.remove('speaker-playing');

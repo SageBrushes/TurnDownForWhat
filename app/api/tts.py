@@ -48,6 +48,18 @@ def get_connection_manager() -> ConnectionManager:
     return ConnectionManager()
 
 
+def ensure_tts_enabled() -> None:
+    """Ensure TTS is configured before handling requests."""
+    if not settings.ELEVENLABS_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error_code": ErrorCode.SERVICE_UNAVAILABLE.value,
+                "message": "TTS is disabled. Set ELEVENLABS_API_KEY to enable it."
+            }
+        )
+
+
 @router.post("/generate", response_model=TTSResponse)
 async def generate_tts(request: TTSRequest):
     """
@@ -74,6 +86,8 @@ async def generate_tts(request: TTSRequest):
     logger.info(f"Generating TTS for text: '{request.text[:50]}...' with voice: {request.voice}")
 
     try:
+        ensure_tts_enabled()
+
         # 1. Generate TTS audio
         filename = await tts_service.generate_tts_audio(
             text=request.text,
@@ -200,6 +214,8 @@ async def get_voices():
     logger.info("Fetching available voices")
 
     try:
+        ensure_tts_enabled()
+
         voices = await tts_service.get_available_voices(
             api_key=settings.ELEVENLABS_API_KEY
         )

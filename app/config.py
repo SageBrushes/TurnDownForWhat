@@ -8,8 +8,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    # Required settings
-    ELEVENLABS_API_KEY: str = Field(..., description="ElevenLabs API key for TTS generation")
+    # Optional settings
+    ELEVENLABS_API_KEY: Optional[str] = Field(
+        default=None,
+        description="ElevenLabs API key for TTS generation"
+    )
 
     # Server settings
     HOST: str = Field(default="0.0.0.0", description="Host to bind the server to")
